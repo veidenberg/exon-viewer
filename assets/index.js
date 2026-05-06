@@ -1,6 +1,18 @@
 (() => {
   const DESKTOP_BREAKPOINT = 1200;
 
+  const queryFirst = (...selectors) => {
+    for (const selector of selectors) {
+      const element = document.querySelector(selector);
+
+      if (element) {
+        return element;
+      }
+    }
+
+    return null;
+  };
+
   const classes = {
     topbarWithSidebarNavigation:
       'topbar_withSidebarNavigation__StandardAppLayout__rVqCZ',
@@ -16,18 +28,28 @@
   };
 
   const elements = {
-    topbar: document.querySelector('.topbar__StandardAppLayout__rVqCZ'),
-    topbarTabs: document.querySelector(
+    topbar: queryFirst(
+      '[data-snapshot-section="viewer-topbar"]',
+      '.topbar__StandardAppLayout__rVqCZ'
+    ),
+    topbarTabs: queryFirst(
+      '[data-snapshot-section="sidebar-navigation"]',
       '.tabsContainer__TranscriptViewSidebarTabs__pqZc2'
     ),
-    main: document.querySelector('.main__StandardAppLayout__rVqCZ'),
-    sidebarWrapper: document.querySelector(
+    main: queryFirst(
+      '[data-snapshot-section="viewer-main"]',
+      '.main__StandardAppLayout__rVqCZ'
+    ),
+    sidebarWrapper: queryFirst(
+      '[data-snapshot-section="sidebar-shell"]',
       '.sidebarWrapper__StandardAppLayout__rVqCZ'
     ),
-    toggleButton: document.querySelector(
+    toggleButton: queryFirst(
+      '[data-snapshot-action="sidebar-toggle"]',
       '.sidebarModeToggle__StandardAppLayout__rVqCZ button'
     ),
-    toggleChevron: document.querySelector(
+    toggleChevron: queryFirst(
+      '[data-snapshot-action="sidebar-toggle"] svg',
       '.sidebarModeToggle__StandardAppLayout__rVqCZ svg'
     )
   };
@@ -51,6 +73,15 @@
 
   const render = () => {
     const showSidebarNavigation = shouldShowSidebarNavigation();
+
+    document.documentElement.dataset.snapshotBreakpoint =
+      window.innerWidth >= DESKTOP_BREAKPOINT ? 'desktop' : 'narrow';
+    document.documentElement.dataset.snapshotSidebar = state.isSidebarOpen
+      ? 'open'
+      : 'closed';
+    document.documentElement.dataset.snapshotNavigation = showSidebarNavigation
+      ? 'visible'
+      : 'hidden';
 
     elements.topbar.classList.toggle(
       classes.topbarWithSidebarNavigation,
@@ -88,7 +119,10 @@
     );
 
     elements.toggleButton.type = 'button';
-    elements.toggleButton.setAttribute('aria-expanded', String(state.isSidebarOpen));
+    elements.toggleButton.setAttribute(
+      'aria-expanded',
+      String(state.isSidebarOpen)
+    );
     elements.toggleChevron.classList.toggle(
       classes.chevronRight,
       state.isSidebarOpen
@@ -118,4 +152,187 @@
   window.addEventListener('resize', render, { passive: true });
 
   render();
+})();
+
+(() => {
+  const tabContainer = document.querySelector(
+    '[data-snapshot-section="sidebar-navigation"]'
+  );
+
+  if (!tabContainer) {
+    return;
+  }
+
+  const buttons = Array.from(
+    tabContainer.querySelectorAll('[data-sidebar-view-trigger]')
+  );
+  const panels = Array.from(
+    document.querySelectorAll('[data-sidebar-view-panel]')
+  );
+
+  if (!buttons.length || !panels.length) {
+    return;
+  }
+
+  const classes = {
+    selected: 'selected__Tabs__EblES',
+    selectedTab: 'selectedTab__TranscriptViewSidebarTabs__pqZc2'
+  };
+  const defaultView = 'overview';
+  const externalReferencesView = 'external-references';
+  const state = {
+    view: defaultView
+  };
+
+  const normalizeView = (view) =>
+    view === externalReferencesView ? externalReferencesView : defaultView;
+
+  const render = () => {
+    document.documentElement.dataset.snapshotSidebarView = state.view;
+
+    buttons.forEach((button) => {
+      const isSelected = button.dataset.sidebarViewTrigger === state.view;
+
+      button.classList.toggle(classes.selected, isSelected);
+      button.classList.toggle(classes.selectedTab, isSelected);
+      button.setAttribute('aria-selected', String(isSelected));
+      button.tabIndex = isSelected ? 0 : -1;
+    });
+
+    panels.forEach((panel) => {
+      const isSelected = panel.dataset.sidebarViewPanel === state.view;
+
+      panel.hidden = !isSelected;
+    });
+  };
+
+  buttons.forEach((button) => {
+    button.type = 'button';
+    button.addEventListener('click', () => {
+      state.view = normalizeView(button.dataset.sidebarViewTrigger);
+      render();
+    });
+  });
+
+  render();
+})();
+
+(() => {
+  const tabContainer = document.querySelector('[data-transcript-view-tabs]');
+
+  if (!tabContainer) {
+    return;
+  }
+
+  const buttons = Array.from(
+    tabContainer.querySelectorAll('[data-transcript-view-trigger]')
+  );
+  const panels = Array.from(
+    document.querySelectorAll('[data-transcript-view-panel]')
+  );
+
+  if (!buttons.length || !panels.length) {
+    return;
+  }
+
+  const classes = {
+    selected: 'selected__Tabs__EblES',
+    selectedTab: 'tabSelected__TranscriptViewTabs__A0dJm'
+  };
+  const defaultView = 'transcript';
+  const proteinView = 'protein';
+  const state = {
+    view: defaultView
+  };
+
+  const normalizeView = (view) =>
+    view === proteinView ? proteinView : defaultView;
+
+  const getViewFromUrl = () => {
+    const url = new URL(window.location.href);
+
+    return normalizeView(url.searchParams.get('view'));
+  };
+
+  const updateUrl = (view, { replace = false } = {}) => {
+    const url = new URL(window.location.href);
+
+    if (view === proteinView) {
+      url.searchParams.set('view', proteinView);
+    } else {
+      url.searchParams.delete('view');
+    }
+
+    const method = replace ? 'replaceState' : 'pushState';
+    window.history[method](window.history.state, '', url);
+  };
+
+  const render = () => {
+    document.documentElement.dataset.snapshotTranscriptView = state.view;
+
+    buttons.forEach((button) => {
+      const isSelected =
+        button.dataset.transcriptViewTrigger === state.view;
+
+      button.classList.toggle(classes.selected, isSelected);
+      button.classList.toggle(classes.selectedTab, isSelected);
+      button.setAttribute('aria-selected', String(isSelected));
+      button.tabIndex = isSelected ? 0 : -1;
+    });
+
+    panels.forEach((panel) => {
+      const isSelected = panel.dataset.transcriptViewPanel === state.view;
+
+      panel.hidden = !isSelected;
+    });
+  };
+
+  const setView = (view, options = {}) => {
+    const { replace = false, updateBrowserUrl = true } = options;
+    state.view = normalizeView(view);
+    render();
+
+    if (updateBrowserUrl) {
+      updateUrl(state.view, { replace });
+    }
+  };
+
+  buttons.forEach((button) => {
+    button.type = 'button';
+    button.addEventListener('click', () => {
+      const nextView = button.dataset.transcriptViewTrigger;
+
+      if (!nextView || nextView === state.view) {
+        return;
+      }
+
+      setView(nextView);
+    });
+  });
+
+  document
+    .querySelectorAll('[data-transcript-view-link]')
+    .forEach((link) => {
+      link.addEventListener('click', (event) => {
+        if (
+          event.defaultPrevented ||
+          event.button !== 0 ||
+          event.metaKey ||
+          event.ctrlKey ||
+          event.shiftKey ||
+          event.altKey
+        ) {
+          return;
+        }
+
+        event.preventDefault();
+        setView(link.dataset.transcriptViewLink);
+      });
+    });
+
+  window.addEventListener('popstate', () => {
+    setView(getViewFromUrl(), { updateBrowserUrl: false });
+  });
+
+  setView(getViewFromUrl(), { replace: true });
 })();

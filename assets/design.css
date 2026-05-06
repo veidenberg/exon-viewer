@@ -1,0 +1,41 @@
+/* Local design overrides for the split Ensembl snapshot.
+   Keep extracted source CSS in assets/index.css and layer edits here. */
+
+:root {
+  --snapshot-page-bg: #fff;
+  --snapshot-surface: #fff;
+}
+
+body.snapshot-page {
+  min-height: 100vh;
+  background: var(--snapshot-page-bg);
+}
+
+.snapshot-root,
+[data-snapshot-root] {
+  min-height: 100vh;
+  isolation: isolate;
+}
+
+[data-snapshot-section="entity-viewer-layout"] {
+  position: relative;
+}
+
+[data-snapshot-section="viewer-main"] {
+  scroll-behavior: smooth;
+}
+
+[data-snapshot-section="sidebar-panel"] {
+  background: var(--snapshot-surface);
+}
+
+[data-snapshot-action="sidebar-toggle"] {
+  cursor: pointer;
+}
+
+/* Recommended design hooks:
+   [data-snapshot-section="global-header"]
+   [data-snapshot-section="viewer-topbar"]
+   [data-snapshot-section="summary-strip"]
+   [data-snapshot-section="viewer-main"]
+   [data-snapshot-section="sidebar-panel"] */
