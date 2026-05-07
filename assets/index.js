@@ -669,51 +669,55 @@
       const createSvgElement = (tagName) =>
         document.createElementNS('http://www.w3.org/2000/svg', tagName);
 
+      const liveExonSequenceTypeCodes =
+        window.liveExonSequenceTypeCodes || {};
+      const liveExonSequenceRanges = window.liveExonSequenceRanges || {};
+
       const legendItems = [
         {
-          key: 'upstream-flank',
-          label: 'Upstream flank',
-          description: 'Sequence shown immediately before the transcript start.'
+          key: 'flanking-sequence',
+          label: 'Flanking sequence',
+          description: 'Sequence shown immediately outside the transcript bounds.'
         },
         {
-          key: 'downstream-flank',
-          label: 'Downstream flank',
-          description: 'Sequence shown immediately after the transcript end.'
+          key: 'intron-sequence',
+          label: 'Intron sequence',
+          description: 'Intronic sequence rendered in lowercase between exons.'
         },
         {
-          key: 'coding-exon',
-          label: 'Coding exon',
-          description: 'Spliced exon sequence contributing to the coding transcript.'
-        },
-        {
-          key: 'intron',
-          label: 'Intron',
-          description: 'Intronic sequence rendered in lowercase; collapsed when hidden.'
+          key: 'utr',
+          label: 'UTR',
+          description: 'Untranslated sequence annotated as UTR on the live transcript.'
         },
         {
           key: 'five-prime-utr',
           label: "5' UTR",
-          description: 'Untranslated sequence upstream of the CDS.'
+          description: '5 prime untranslated sequence highlighted on the transcript exons view.'
         },
         {
           key: 'three-prime-utr',
           label: "3' UTR",
-          description: 'Untranslated sequence downstream of the CDS.'
+          description: '3 prime untranslated sequence highlighted on the transcript exons view.'
         },
         {
-          key: 'variant',
-          label: 'Variant',
-          description: 'Representative sequence window carrying a reported transcript variant.'
+          key: 'coding-sequence',
+          label: 'Coding sequence',
+          description: 'Coding bases without an additional variant-consequence highlight.'
         },
         {
-          key: 'missense',
-          label: 'Missense',
-          description: 'Protein-altering substitution within the coding sequence.'
+          key: 'translated-sequence',
+          label: 'Translated sequence',
+          description: 'Translated sequence styling carried over from the live Ensembl view.'
+        },
+        {
+          key: 'missense-or-start-lost',
+          label: 'Missense / start lost',
+          description: 'Live Ensembl uses the same highlight for missense and start-lost consequences.'
         },
         {
           key: 'frameshift',
           label: 'Frameshift',
-          description: 'Indel affecting the downstream codon frame.'
+          description: 'Frameshift consequence from the live transcript annotation.'
         },
         {
           key: 'synonymous',
@@ -721,41 +725,42 @@
           description: 'Coding change without amino-acid substitution.'
         },
         {
-          key: 'splice-donor',
-          label: 'Splice donor',
-          description: 'Representative donor site signal at the intron start.'
-        },
-        {
-          key: 'splice-acceptor',
-          label: 'Splice acceptor',
-          description: 'Representative acceptor site signal at the intron end.'
+          key: 'splice-acceptor-or-donor',
+          label: 'Splice acceptor / donor',
+          description: 'Live Ensembl uses the same highlight for splice acceptor and donor consequences.'
         },
         {
           key: 'splice-region',
           label: 'Splice region',
-          description: 'Near-junction sequence that may affect splicing efficiency.'
+          description: 'Variant consequence near a splice junction.'
         },
         {
-          key: 'start-lost',
-          label: 'Start lost',
-          description: 'Representative change affecting the CDS start context.'
+          key: 'stop-gained-or-stop-lost',
+          label: 'Stop gained / stop lost',
+          description: 'Live Ensembl uses the same highlight for stop gained and stop lost consequences.'
         },
         {
-          key: 'stop-gained',
-          label: 'Stop gained',
-          description: 'Representative truncating substitution in the coding sequence.'
+          key: 'inframe-indel',
+          label: 'Inframe deletion / insertion',
+          description: 'Inframe indel consequence using the live transcript highlight.'
         },
         {
-          key: 'stop-lost',
-          label: 'Stop lost',
-          description: 'Representative change extending translation past the annotated stop.'
-        },
-        {
-          key: 'inframe-deletion',
-          label: 'Inframe deletion',
-          description: 'Representative codon-preserving deletion segment.'
+          key: 'protein-altering-variant',
+          label: 'Protein altering variant',
+          description: 'Protein-altering consequence highlighted on the live transcript.'
         }
       ];
+      const sequenceAnnotationLabels = Object.fromEntries(
+        legendItems.map((item) => [item.key, item.label])
+      );
+      const getSequenceAnnotationLabel = (type) =>
+        sequenceAnnotationLabels[type] ||
+        type
+          .split('-')
+          .map((part) =>
+            part.length ? part.charAt(0).toUpperCase() + part.slice(1) : part
+          )
+          .join(' ');
 
       if (legendList) {
         legendList.innerHTML = legendItems
@@ -791,33 +796,6 @@
         'ttgctcttgagttttccctgagtagtagtctccagttcatttgccagtgagaagatag';
       const downstreamFlankSequence =
         'ttttgttttttatttatgttgttttcctgagacagagtctcactctgtcacccaggct';
-      const exonFeatureAnnotations = {
-        ENSE00001484009: [{ start: 45, end: 63, type: 'start-lost' }],
-        ENSE00003666217: [
-          { start: 78, end: 104, type: 'missense' },
-          { start: 170, end: 193, type: 'synonymous' }
-        ],
-        ENSE00000939167: [
-          { start: 152, end: 182, type: 'variant' },
-          { start: 640, end: 671, type: 'inframe-deletion' }
-        ],
-        ENSE00000939168: [
-          { start: 210, end: 246, type: 'missense' },
-          { start: 1184, end: 1215, type: 'frameshift' },
-          { start: 2526, end: 2556, type: 'stop-gained' }
-        ],
-        ENSE00000939173: [{ start: 300, end: 326, type: 'variant' }],
-        ENSE00000939174: [{ start: 70, end: 94, type: 'missense' }],
-        ENSE00000939177: [{ start: 180, end: 214, type: 'stop-lost' }],
-        ENSE00000939189: [
-          { start: 40, end: 66, type: 'variant' },
-          { start: 167, end: 192, type: 'inframe-deletion' }
-        ],
-        ENSE00003717596: [
-          { start: 120, end: 152, type: 'missense' },
-          { start: 720, end: 762, type: 'frameshift' }
-        ]
-      };
       const sequenceState = {
         showIntrons: Boolean(intronToggle.checked),
         segments: [],
@@ -897,12 +875,13 @@
 
       const renderSequenceParts = (parts) =>
         parts
-          .map(
-            (part) =>
-              `<span data-sequence-annotation="${part.type}">${escapeHtml(
-                part.text
-              )}</span>`
-          )
+          .map((part) => {
+            const label = getSequenceAnnotationLabel(part.type);
+
+            return `<span data-sequence-annotation="${part.type}" title="${escapeHtml(
+              label
+            )}">${escapeHtml(part.text)}</span>`;
+          })
           .join('');
 
       const buildIntronSequence = (length, index) => {
@@ -924,48 +903,51 @@
         return `${donor}${repeated.slice(0, 12)}...${repeated.slice(-10)}${acceptor}`;
       };
 
-      const buildIntronAnnotations = (sequenceLength) => {
-        if (!sequenceLength) {
-          return [];
+      const getDefaultExonSequenceType = (row) => {
+        const utrLength = parseUtrLength(row.utrs);
+
+        if (row.utrs.startsWith("5' UTR") && utrLength >= row.sequence.length) {
+          return 'five-prime-utr';
         }
 
-        const annotations = [
-          { start: 1, end: Math.min(2, sequenceLength), type: 'splice-donor' }
-        ];
-
-        if (sequenceLength > 2) {
-          annotations.push({
-            start: 3,
-            end: Math.min(8, sequenceLength),
-            type: 'splice-region'
-          });
+        if (row.utrs.startsWith("3' UTR") && utrLength >= row.sequence.length) {
+          return 'three-prime-utr';
         }
 
-        const acceptorStart = Math.max(sequenceLength - 5, 1);
+        return 'coding-sequence';
+      };
 
-        if (acceptorStart > 8) {
-          const spliceRegionEnd = Math.max(acceptorStart - 1, 1);
-          const spliceRegionStart = Math.max(acceptorStart - 6, 9);
+      const resolveLiveSequenceType = (row, code) => {
+        const type = liveExonSequenceTypeCodes[code] || code;
 
-          if (spliceRegionStart <= spliceRegionEnd) {
-            annotations.push({
-              start: spliceRegionStart,
-              end: spliceRegionEnd,
-              type: 'splice-region'
-            });
-          }
+        if (type !== 'utr-highlight') {
+          return type;
         }
 
-        annotations.push({
-          start: acceptorStart,
-          end: sequenceLength,
-          type: 'splice-acceptor'
-        });
+        if (row.utrs.startsWith("5' UTR")) {
+          return 'five-prime-utr';
+        }
 
-        return normalizeAnnotations(sequenceLength, annotations);
+        if (row.utrs.startsWith("3' UTR")) {
+          return 'three-prime-utr';
+        }
+
+        return 'utr';
       };
 
       const buildExonAnnotations = (row) => {
+        const liveAnnotations = Array.isArray(liveExonSequenceRanges[row.exonId])
+          ? liveExonSequenceRanges[row.exonId].map(([start, end, code]) => ({
+              start,
+              end,
+              type: resolveLiveSequenceType(row, code)
+            }))
+          : [];
+
+        if (liveAnnotations.length) {
+          return normalizeAnnotations(row.sequence.length, liveAnnotations);
+        }
+
         const annotations = [];
         const utrLength = parseUtrLength(row.utrs);
 
@@ -985,10 +967,6 @@
           });
         }
 
-        (exonFeatureAnnotations[row.exonId] || []).forEach((annotation) => {
-          annotations.push(annotation);
-        });
-
         return normalizeAnnotations(row.sequence.length, annotations);
       };
 
@@ -1002,11 +980,7 @@
             location: `${Math.max(firstExon.start - upstreamFlankSequence.length, 1)}-${firstExon.start - 1}`,
             mapStart: Math.max(firstExon.start - upstreamFlankSequence.length, 1),
             mapEnd: firstExon.start - 1,
-            parts: buildSequenceParts(
-              upstreamFlankSequence,
-              'upstream-flank',
-              []
-            )
+            parts: buildSequenceParts(upstreamFlankSequence, 'flanking-sequence', [])
           }
         ];
 
@@ -1020,13 +994,13 @@
             subtitle: `${row.exonId} · ${row.location} · ${formatBp(
               row.exonLength
             )}`,
-            detail: row.utrs !== 'None' ? row.utrs : 'Coding exon',
+            detail: row.utrs !== 'None' ? row.utrs : 'Coding sequence',
             location: row.location,
             mapStart: row.start,
             mapEnd: row.end,
             parts: buildSequenceParts(
               row.sequence,
-              'coding-exon',
+              getDefaultExonSequenceType(row),
               buildExonAnnotations(row)
             )
           });
@@ -1038,21 +1012,18 @@
           }
 
           const intronLength = Math.max(nextRow.start - row.end - 1, 0);
+          const intronSequence = buildIntronSequence(intronLength, index);
 
           segments.push({
             id: `segment-intron-${row.order}-${nextRow.order}`,
             kind: 'intron',
             label: `Intron ${row.order}-${nextRow.order}`,
             subtitle: `${formatBp(intronLength)} between exon ${row.order} and exon ${nextRow.order}`,
-            detail: 'Representative splice donor / acceptor context shown',
+            detail: 'Intron sequence',
             location: `${row.end + 1}-${nextRow.start - 1}`,
             mapStart: row.end + 1,
             mapEnd: nextRow.start - 1,
-            parts: buildSequenceParts(
-              buildIntronSequence(intronLength, index),
-              'intron',
-              buildIntronAnnotations(buildIntronSequence(intronLength, index).length)
-            )
+            parts: buildSequenceParts(intronSequence, 'intron-sequence', [])
           });
         });
 
@@ -1066,7 +1037,7 @@
           mapEnd: lastExon.end + downstreamFlankSequence.length,
           parts: buildSequenceParts(
             downstreamFlankSequence,
-            'downstream-flank',
+            'flanking-sequence',
             []
           )
         });

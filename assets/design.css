@@ -479,111 +479,189 @@ html[data-snapshot-transcript-view="sequence"] [data-sequence-map-overlay="prima
 
 [data-sequence-annotation] {
   -webkit-box-decoration-break: clone;
-  border-radius: 4px;
+  border-radius: 0;
   box-decoration-break: clone;
   padding: 0 0.12em;
 }
 
+[data-sequence-annotation][title] {
+  cursor: help;
+}
+
+[data-sequence-annotation="flanking-sequence"],
 [data-sequence-annotation="upstream-flank"],
-[data-snapshot-section="sequence-legend-swatch"][data-sequence-annotation="upstream-flank"] {
-  background: rgba(148, 163, 184, 0.18);
-  color: #e2e8f0;
+[data-sequence-annotation="downstream-flank"] {
+  background: transparent;
+  color: #008000;
 }
 
-[data-sequence-annotation="downstream-flank"],
+[data-snapshot-section="sequence-legend-swatch"][data-sequence-annotation="flanking-sequence"],
+[data-snapshot-section="sequence-legend-swatch"][data-sequence-annotation="upstream-flank"],
 [data-snapshot-section="sequence-legend-swatch"][data-sequence-annotation="downstream-flank"] {
-  background: rgba(125, 211, 252, 0.16);
-  color: #e0f2fe;
+  background: rgba(0, 128, 0, 0.08);
+  border-color: rgba(0, 128, 0, 0.28);
 }
 
-[data-sequence-annotation="coding-exon"],
-[data-snapshot-section="sequence-legend-swatch"][data-sequence-annotation="coding-exon"] {
-  background: rgba(59, 130, 246, 0.22);
-  color: #eff6ff;
+[data-sequence-annotation="intron-sequence"],
+[data-sequence-annotation="intron"] {
+  background: transparent;
+  color: #aaaaaa;
 }
 
-[data-sequence-annotation="intron"],
+[data-snapshot-section="sequence-legend-swatch"][data-sequence-annotation="intron-sequence"],
 [data-snapshot-section="sequence-legend-swatch"][data-sequence-annotation="intron"] {
-  background: rgba(71, 85, 105, 0.28);
-  color: #cbd5e1;
+  background: rgba(170, 170, 170, 0.08);
+  border-color: rgba(170, 170, 170, 0.32);
+}
+
+[data-sequence-annotation="utr"] {
+  background: transparent;
+  color: #cd6839;
+}
+
+[data-snapshot-section="sequence-legend-swatch"][data-sequence-annotation="utr"] {
+  background: rgba(205, 104, 57, 0.08);
+  border-color: rgba(205, 104, 57, 0.32);
 }
 
 [data-sequence-annotation="five-prime-utr"],
-[data-snapshot-section="sequence-legend-swatch"][data-sequence-annotation="five-prime-utr"] {
-  background: rgba(34, 197, 94, 0.22);
-  color: #dcfce7;
+[data-sequence-annotation="three-prime-utr"] {
+  background: rgba(122, 197, 205, 0.84);
+  color: #000000;
 }
 
-[data-sequence-annotation="three-prime-utr"],
+[data-snapshot-section="sequence-legend-swatch"][data-sequence-annotation="five-prime-utr"],
 [data-snapshot-section="sequence-legend-swatch"][data-sequence-annotation="three-prime-utr"] {
-  background: rgba(20, 184, 166, 0.22);
-  color: #ccfbf1;
+  background: rgba(122, 197, 205, 0.84);
+  border-color: rgba(122, 197, 205, 0.72);
+  color: #000000;
 }
 
-[data-sequence-annotation="variant"],
-[data-snapshot-section="sequence-legend-swatch"][data-sequence-annotation="variant"] {
-  background: rgba(250, 204, 21, 0.24);
-  color: #fef3c7;
+[data-sequence-annotation="coding-sequence"],
+[data-sequence-annotation="coding-exon"] {
+  background: rgba(69, 139, 0, 0.84);
+  color: #ffffff;
 }
 
+[data-snapshot-section="sequence-legend-swatch"][data-sequence-annotation="coding-sequence"],
+[data-snapshot-section="sequence-legend-swatch"][data-sequence-annotation="coding-exon"] {
+  background: rgba(69, 139, 0, 0.84);
+  border-color: rgba(69, 139, 0, 0.72);
+  color: #ffffff;
+}
+
+[data-sequence-annotation="translated-sequence"] {
+  background: transparent;
+  color: #1044ee;
+}
+
+[data-snapshot-section="sequence-legend-swatch"][data-sequence-annotation="translated-sequence"] {
+  background: rgba(16, 68, 238, 0.08);
+  border-color: rgba(16, 68, 238, 0.32);
+}
+
+[data-sequence-annotation="missense-or-start-lost"],
 [data-sequence-annotation="missense"],
-[data-snapshot-section="sequence-legend-swatch"][data-sequence-annotation="missense"] {
-  background: rgba(249, 115, 22, 0.3);
-  color: #ffedd5;
-}
-
-[data-sequence-annotation="frameshift"],
-[data-snapshot-section="sequence-legend-swatch"][data-sequence-annotation="frameshift"] {
-  background: rgba(239, 68, 68, 0.28);
-  color: #fee2e2;
-}
-
-[data-sequence-annotation="synonymous"],
-[data-snapshot-section="sequence-legend-swatch"][data-sequence-annotation="synonymous"] {
-  background: rgba(132, 204, 22, 0.24);
-  color: #ecfccb;
-}
-
-[data-sequence-annotation="splice-donor"],
-[data-snapshot-section="sequence-legend-swatch"][data-sequence-annotation="splice-donor"] {
-  background: rgba(251, 113, 133, 0.26);
-  color: #ffe4e6;
-}
-
-[data-sequence-annotation="splice-acceptor"],
-[data-snapshot-section="sequence-legend-swatch"][data-sequence-annotation="splice-acceptor"] {
-  background: rgba(217, 119, 6, 0.28);
-  color: #ffedd5;
-}
-
-[data-sequence-annotation="splice-region"],
-[data-snapshot-section="sequence-legend-swatch"][data-sequence-annotation="splice-region"] {
-  background: rgba(251, 191, 36, 0.2);
-  color: #fef3c7;
-}
-
 [data-sequence-annotation="start-lost"],
-[data-snapshot-section="sequence-legend-swatch"][data-sequence-annotation="start-lost"] {
-  background: rgba(225, 29, 72, 0.28);
-  color: #ffe4e6;
+[data-sequence-annotation="variant"] {
+  background: rgba(255, 215, 0, 0.82);
+  color: #000000;
 }
 
+[data-snapshot-section="sequence-legend-swatch"][data-sequence-annotation="missense-or-start-lost"],
+[data-snapshot-section="sequence-legend-swatch"][data-sequence-annotation="missense"],
+[data-snapshot-section="sequence-legend-swatch"][data-sequence-annotation="start-lost"],
+[data-snapshot-section="sequence-legend-swatch"][data-sequence-annotation="variant"] {
+  background: rgba(255, 215, 0, 0.82);
+  border-color: rgba(255, 215, 0, 0.72);
+  color: #000000;
+}
+
+[data-sequence-annotation="frameshift"] {
+  background: rgba(148, 0, 211, 0.84);
+  color: #ffffff;
+}
+
+[data-snapshot-section="sequence-legend-swatch"][data-sequence-annotation="frameshift"] {
+  background: rgba(148, 0, 211, 0.84);
+  border-color: rgba(148, 0, 211, 0.72);
+  color: #ffffff;
+}
+
+[data-sequence-annotation="synonymous"] {
+  background: rgba(118, 238, 0, 0.82);
+  color: #000000;
+}
+
+[data-snapshot-section="sequence-legend-swatch"][data-sequence-annotation="synonymous"] {
+  background: rgba(118, 238, 0, 0.82);
+  border-color: rgba(118, 238, 0, 0.72);
+  color: #000000;
+}
+
+[data-sequence-annotation="splice-acceptor-or-donor"],
+[data-sequence-annotation="splice-donor"],
+[data-sequence-annotation="splice-acceptor"] {
+  background: rgba(255, 88, 26, 0.84);
+  color: #ffffff;
+}
+
+[data-snapshot-section="sequence-legend-swatch"][data-sequence-annotation="splice-acceptor-or-donor"],
+[data-snapshot-section="sequence-legend-swatch"][data-sequence-annotation="splice-donor"],
+[data-snapshot-section="sequence-legend-swatch"][data-sequence-annotation="splice-acceptor"] {
+  background: rgba(255, 88, 26, 0.84);
+  border-color: rgba(255, 88, 26, 0.72);
+  color: #ffffff;
+}
+
+[data-sequence-annotation="splice-region"] {
+  background: rgba(255, 127, 80, 0.84);
+  color: #ffffff;
+}
+
+[data-snapshot-section="sequence-legend-swatch"][data-sequence-annotation="splice-region"] {
+  background: rgba(255, 127, 80, 0.84);
+  border-color: rgba(255, 127, 80, 0.72);
+  color: #ffffff;
+}
+
+[data-sequence-annotation="stop-gained-or-stop-lost"],
 [data-sequence-annotation="stop-gained"],
-[data-snapshot-section="sequence-legend-swatch"][data-sequence-annotation="stop-gained"] {
-  background: rgba(220, 38, 38, 0.28);
-  color: #fee2e2;
+[data-sequence-annotation="stop-lost"] {
+  background: rgba(255, 0, 0, 0.84);
+  color: #ffffff;
 }
 
-[data-sequence-annotation="stop-lost"],
+[data-snapshot-section="sequence-legend-swatch"][data-sequence-annotation="stop-gained-or-stop-lost"],
+[data-snapshot-section="sequence-legend-swatch"][data-sequence-annotation="stop-gained"],
 [data-snapshot-section="sequence-legend-swatch"][data-sequence-annotation="stop-lost"] {
-  background: rgba(14, 116, 144, 0.28);
-  color: #cffafe;
+  background: rgba(255, 0, 0, 0.84);
+  border-color: rgba(255, 0, 0, 0.72);
+  color: #ffffff;
 }
 
-[data-sequence-annotation="inframe-deletion"],
+[data-sequence-annotation="inframe-indel"],
+[data-sequence-annotation="inframe-deletion"] {
+  background: rgba(255, 105, 180, 0.84);
+  color: #ffffff;
+}
+
+[data-snapshot-section="sequence-legend-swatch"][data-sequence-annotation="inframe-indel"],
 [data-snapshot-section="sequence-legend-swatch"][data-sequence-annotation="inframe-deletion"] {
-  background: rgba(45, 212, 191, 0.24);
-  color: #ccfbf1;
+  background: rgba(255, 105, 180, 0.84);
+  border-color: rgba(255, 105, 180, 0.72);
+  color: #ffffff;
+}
+
+[data-sequence-annotation="protein-altering-variant"] {
+  background: rgba(255, 0, 128, 0.84);
+  color: #ffffff;
+}
+
+[data-snapshot-section="sequence-legend-swatch"][data-sequence-annotation="protein-altering-variant"] {
+  background: rgba(255, 0, 128, 0.84);
+  border-color: rgba(255, 0, 128, 0.72);
+  color: #ffffff;
 }
 
 [data-snapshot-section="sidebar-navigation"] {
@@ -621,7 +699,7 @@ html[data-snapshot-transcript-view="sequence"] [data-sequence-map-overlay="prima
 
 [data-snapshot-section="sequence-legend-swatch"] {
   border: 1px solid rgba(15, 23, 42, 0.12);
-  border-radius: 4px;
+  border-radius: 0;
   display: block;
   height: 18px;
   margin-top: 2px;
