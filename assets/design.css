@@ -275,11 +275,17 @@ body.snapshot-page {
   gap: 8px;
   grid-template-rows: auto auto minmax(0, 1fr);
   height: 100%;
-  margin-right: 11px;
+  margin-left: calc(
+    var(--gene-view-left-column-width) +
+      var(--gene-view-middle-column-left-gap)
+  );
+  margin-right: 0;
   margin-top: 0;
+  max-width: 695px;
   min-height: 0;
   overflow: visible;
   padding: 0 0 20px;
+  width: var(--gene-image-width);
 }
 
 [data-snapshot-section="transcript-sequence-overview"] {
@@ -345,6 +351,11 @@ body.snapshot-page {
   transition: opacity 160ms ease;
 }
 
+[data-sequence-map-overlay="primary"] [data-sequence-map-window],
+[data-sequence-map-overlay="primary"] [data-sequence-map-marker] {
+  display: none;
+}
+
 [data-sequence-map-overlay="primary"] [data-sequence-map-exon],
 [data-sequence-map-overlay="primary"] [data-sequence-map-window] {
   shape-rendering: crispEdges;
@@ -372,14 +383,17 @@ html[data-snapshot-transcript-view="sequence"] [data-sequence-map-overlay="prima
 }
 
 [data-sequence-map-exon][data-sequence-map-state="active"] {
-  fill: var(--color-blue);
+  fill: var(--color-orange);
 }
 
 [data-sequence-map-exon]:focus-visible {
-  fill: #bfdbfe;
   outline: none;
-  stroke: #f8fafc;
-  stroke-width: 1;
+  stroke: none;
+}
+
+[data-sequence-map-exon]:focus {
+  outline: none;
+  stroke: none;
 }
 
 [data-sequence-map-end-label] {
@@ -435,21 +449,21 @@ html[data-snapshot-transcript-view="sequence"] [data-sequence-map-overlay="prima
 }
 
 [data-sequence-segment][data-sequence-segment-kind="exon"] {
-  background-color: rgba(59, 130, 246, 0.04);
+  background-color: transparent;
 }
 
 [data-sequence-segment][data-sequence-segment-kind="intron"] {
-  background-color: rgba(148, 163, 184, 0.04);
+  background-color: transparent;
 }
 
 [data-sequence-segment][data-sequence-active] {
-  background-color: rgba(96, 165, 250, 0.08);
-  box-shadow: inset 2px 0 0 rgba(96, 165, 250, 0.9);
+  background-color: transparent;
+  box-shadow: inset 2px 0 0 var(--color-orange);
 }
 
 [data-sequence-segment][data-sequence-targeted] {
-  background-color: rgba(245, 158, 11, 0.16);
-  box-shadow: inset 2px 0 0 rgba(245, 158, 11, 0.95);
+  background-color: transparent;
+  box-shadow: none;
 }
 
 [data-sequence-segment-sequence] {
@@ -629,7 +643,10 @@ html[data-snapshot-transcript-view="sequence"] [data-sequence-map-overlay="prima
 
 @media (max-width: 900px) {
   [data-snapshot-section="transcript-sequence-panel"] {
+    margin-left: 0;
+    max-width: 100%;
     padding: 16px;
+    width: 100%;
   }
 
   [data-snapshot-section="transcript-sequence-viewport"] {

@@ -1203,17 +1203,32 @@
       };
 
       const syncSequenceOverviewToScroll = () => {
-        const viewportTop = sequenceViewport.scrollTop;
-        const viewportMid = viewportTop + sequenceViewport.clientHeight / 2;
+        const viewportRect = sequenceViewport.getBoundingClientRect();
+        const viewportAnchor = viewportRect.top + 2;
 
         if (!sequenceState.segmentElements.length) {
           return;
         }
 
-        const activeElement = sequenceState.segmentElements.reduce(
-          (closest, element) => {
-            const elementMid = element.offsetTop + element.offsetHeight / 2;
-            const distance = Math.abs(elementMid - viewportMid);
+        const exonElements = sequenceState.segmentElements.filter(
+          (element) => element.dataset.sequenceSegmentKind === 'exon'
+        );
+
+        const topmostVisibleExon = exonElements.find((element) => {
+          const elementRect = element.getBoundingClientRect();
+
+          return (
+            elementRect.bottom >= viewportRect.top &&
+            elementRect.top <= viewportRect.bottom
+          );
+        });
+
+        const activeElement =
+          topmostVisibleExon ||
+          exonElements.reduce((closest, element) => {
+            const distance = Math.abs(
+              element.getBoundingClientRect().top - viewportAnchor
+            );
 
             if (!closest || distance < closest.distance) {
               return {
@@ -1223,9 +1238,7 @@
             }
 
             return closest;
-          },
-          null
-        )?.element;
+          }, null)?.element;
 
         if (!activeElement) {
           return;
@@ -1239,9 +1252,16 @@
           return;
         }
 
+        const activeElementRect = activeElement.getBoundingClientRect();
+        const activeAnchor = clamp(
+          viewportAnchor,
+          activeElementRect.top,
+          activeElementRect.bottom
+        );
+
         const localProgress = clamp(
-          (viewportMid - activeElement.offsetTop) /
-            Math.max(activeElement.offsetHeight, 1),
+          (activeAnchor - activeElementRect.top) /
+            Math.max(activeElementRect.height, 1),
           0,
           1
         );
@@ -1265,25 +1285,36 @@
 
       const highlightSequenceTarget = (segmentId) => {
         window.clearTimeout(sequenceState.targetTimeout);
-        sequenceState.targetSegmentId = segmentId;
+        sequenceState.targetSegmentId = null;
         updateSegmentStates();
-        sequenceState.targetTimeout = window.setTimeout(() => {
-          sequenceState.targetSegmentId = null;
-          updateSegmentStates();
-        }, 1400);
       };
 
       const scrollToSequenceSegment = (segmentId) => {
         const targetElement = sequenceList.querySelector(`#${segmentId}`);
+        const targetSegment = sequenceState.segmentsById.get(segmentId);
 
         if (!targetElement) {
           return;
         }
 
+        if (targetSegment) {
+          updateOverviewLocation(
+            targetSegment,
+            targetSegment.mapStart + (targetSegment.mapEnd - targetSegment.mapStart) / 2
+          );
+        }
+
         highlightSequenceTarget(segmentId);
+        const viewportRect = sequenceViewport.getBoundingClientRect();
+        const targetRect = targetElement.getBoundingClientRect();
+        const nextTop =
+          sequenceViewport.scrollTop +
+          (targetRect.top - viewportRect.top) -
+          6;
+
         sequenceViewport.scrollTo({
-          top: Math.max(targetElement.offsetTop - 12, 0),
-          behavior: 'smooth'
+          top: Math.max(nextTop, 0),
+          behavior: 'instant'
         });
 
         window.requestAnimationFrame(scheduleOverviewSync);
@@ -1421,7 +1452,7 @@
         scheduleOverviewSync();
       });
 
-      sequenceViewport.addEventListener('scroll', scheduleOverviewSync, {
+      sequenceViewport.addEventListener('scroll', syncSequenceOverviewToScroll, {
         passive: true
       });
       window.addEventListener('resize', scheduleOverviewSync, { passive: true });
