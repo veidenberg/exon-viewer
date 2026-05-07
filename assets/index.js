@@ -218,6 +218,43 @@
 })();
 
 (() => {
+  const triggers = Array.from(
+    document.querySelectorAll('[data-snapshot-collapsible-trigger]')
+  );
+
+  if (!triggers.length) {
+    return;
+  }
+
+  const chevronUpClass = 'chevron_up__Chevron__RsFHI';
+
+  const render = (trigger) => {
+    const panelId = trigger.getAttribute('aria-controls');
+    const panel = panelId ? document.getElementById(panelId) : null;
+    const isExpanded = trigger.getAttribute('aria-expanded') === 'true';
+    const chevron = trigger.querySelector('.chevron__Chevron__RsFHI');
+
+    if (panel) {
+      panel.hidden = !isExpanded;
+    }
+
+    if (chevron) {
+      chevron.classList.toggle(chevronUpClass, isExpanded);
+    }
+  };
+
+  triggers.forEach((trigger) => {
+    trigger.addEventListener('click', () => {
+      const isExpanded = trigger.getAttribute('aria-expanded') === 'true';
+      trigger.setAttribute('aria-expanded', String(!isExpanded));
+      render(trigger);
+    });
+
+    render(trigger);
+  });
+})();
+
+(() => {
   const tabContainer = document.querySelector('[data-transcript-view-tabs]');
 
   if (!tabContainer) {

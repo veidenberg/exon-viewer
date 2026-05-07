@@ -33,6 +33,101 @@ body.snapshot-page {
   cursor: pointer;
 }
 
+[data-snapshot-section="sidebar-overview-top"] {
+  margin-bottom: 14px;
+}
+
+[data-snapshot-section="sidebar-overview-topline"] {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+[data-snapshot-section="sidebar-overview-species"] {
+  align-items: baseline;
+  color: var(--color-black);
+  display: inline-flex;
+  gap: 8px;
+}
+
+[data-snapshot-section="sidebar-overview-assembly"] {
+  color: var(--color-medium-dark-grey);
+  font-size: 12px;
+  font-weight: var(--font-weight-light);
+}
+
+[data-snapshot-section="sidebar-overview-accession"] {
+  align-items: center;
+  color: var(--color-blue);
+  display: inline-flex;
+  gap: 0;
+  white-space: nowrap;
+}
+
+[data-snapshot-section="sidebar-overview-accession"] svg {
+  fill: var(--color-orange);
+}
+
+[data-snapshot-section="sidebar-view-in-row"] {
+  margin-top: 12px;
+}
+
+[data-snapshot-section="sidebar-view-in-row"] .viewInApp__ViewInApp__-eJnd {
+  align-items: center;
+}
+
+[data-snapshot-section="sidebar-gene-name-row"] {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  line-height: 1.4;
+}
+
+[data-snapshot-section="sidebar-find-row"] {
+  margin-top: 16px;
+  margin-bottom: 16px;
+}
+
+[data-snapshot-section="sidebar-find-row"] .searchButton__SearchButton__WkReY {
+  align-items: center;
+  background: none;
+  border: 0;
+  color: var(--color-blue);
+  padding: 0;
+}
+
+[data-snapshot-section="sidebar-find-row"] .searchIconWrapper__SearchButton__WkReY {
+  background-color: var(--color-blue);
+  border-radius: 5px;
+  height: 22px;
+  width: 22px;
+}
+
+[data-snapshot-section="sidebar-find-row"] .searchIcon__SearchButton__WkReY {
+  fill: var(--color-white);
+  height: 14px;
+}
+
+[data-snapshot-sidebar-copy] + [data-snapshot-sidebar-copy] {
+  margin-top: 10px;
+}
+
+[data-snapshot-collapsible="function"] [data-snapshot-sidebar-copy] {
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+[data-snapshot-collapsible-trigger][data-snapshot-collapsible-disabled] {
+  background-color: var(--color-light-grey);
+  color: var(--color-grey);
+  cursor: default;
+}
+
+[data-snapshot-collapsible-trigger][data-snapshot-collapsible-disabled] svg {
+  fill: var(--color-grey);
+}
+
 /* Recommended design hooks:
    [data-snapshot-section="global-header"]
    [data-snapshot-section="viewer-topbar"]
