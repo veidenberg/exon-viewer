@@ -1128,19 +1128,10 @@
 
         sequenceList.innerHTML = segments
           .map(
-            (segment) => `
-              <div
-                id="${segment.id}"
-                data-sequence-segment="${segment.id}"
-                data-sequence-segment-kind="${segment.kind}"
-              >
-                <span data-sequence-segment-label>${segment.label}</span>
-                <span data-sequence-segment-location>${segment.location}</span>
-                <span data-sequence-segment-sequence>${renderSequenceParts(
-                  segment.parts
-                )}</span>
-              </div>
-            `
+            (segment) =>
+              `<span id="${segment.id}" data-sequence-segment="${segment.id}" data-sequence-segment-kind="${segment.kind}"><span data-sequence-segment-sequence>${renderSequenceParts(
+                segment.parts
+              )}</span></span>`
           )
           .join('');
 
