@@ -693,7 +693,7 @@
               <div class="container__TranscriptView__DMThv" data-snapshot-section="transcript-content">
                 <div class="gridColumns__TranscriptView__DMThv">
                   <div class="geneId__GeneOverviewImage__v0BUT">
-                    ENSG00000139618.18
+                    ENST00000380152.8
                   </div>
                   <div class="directionIndicator__GeneOverviewImage__v0BUT">
                     <span>5'</span><span>3'</span>
@@ -928,6 +928,17 @@
                         id="snapshot-transcript-view-tab-protein"
                       >
                         Transcript function
+                      </button>
+                      <button
+                        type="button"
+                        class="tab__Tabs__EblES tab__TranscriptViewTabs__A0dJm"
+                        data-transcript-view-trigger="exons"
+                        role="tab"
+                        aria-selected="false"
+                        aria-controls="snapshot-transcript-view-panel-exons"
+                        id="snapshot-transcript-view-tab-exons"
+                      >
+                        Exons
                       </button>
                     </div>
                   </div>
@@ -1733,6 +1744,35 @@
                           </div>
                         </div>
                       </div>
+                    </div>
+                  </div>
+                </div>
+                <div
+                  class="panel__Panel__2gAo1 panel__TranscriptFunction__4RDk-"
+                  id="snapshot-transcript-view-panel-exons"
+                  data-transcript-view-panel="exons"
+                  role="tabpanel"
+                  aria-labelledby="snapshot-transcript-view-tab-exons"
+                  hidden
+                >
+                  <div
+                    class="body__Panel__2gAo1 panelBody__TranscriptFunction__4RDk-"
+                    data-snapshot-section="transcript-exons-panel"
+                  >
+                    <div data-snapshot-section="transcript-exons-table-scroll">
+                      <table data-snapshot-section="transcript-exons-table">
+                        <thead>
+                          <tr>
+                            <th scope="col">Order</th>
+                            <th scope="col">Exon ID</th>
+                            <th scope="col">Transcript location</th>
+                            <th scope="col">Phase (start / end)</th>
+                            <th scope="col">Exon length</th>
+                            <th scope="col">Sequence</th>
+                          </tr>
+                        </thead>
+                        <tbody data-snapshot-section="transcript-exons-table-body"></tbody>
+                      </table>
                     </div>
                   </div>
                 </div>
