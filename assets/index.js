@@ -604,11 +604,32 @@
               <td>${row.phase}</td>
               <td>${row.exonLength}</td>
               <td>
-                <span
-                  data-snapshot-section="transcript-exons-sequence"
-                  title="${row.sequence}"
-                  aria-label="${row.sequence}"
-                >${row.sequence.slice(0, sequencePreviewLength)}</span>
+                <div data-snapshot-section="transcript-exons-sequence-shell">
+                  <span
+                    data-snapshot-section="transcript-exons-sequence"
+                    title="${row.sequence}"
+                    aria-label="${row.sequence}"
+                  >${row.sequence.slice(0, sequencePreviewLength)}</span>
+                  <button
+                    type="button"
+                    data-snapshot-section="transcript-exons-sequence-jump"
+                    data-sequence-table-trigger="segment-exon-${row.order}"
+                    aria-label="Open exon ${row.order} in the Sequence panel"
+                    title="Open exon ${row.order} in the Sequence panel"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      xml:space="preserve"
+                      viewBox="0 0 32 20"
+                      class="chevron__Chevron__RsFHI ${classes.chevronRight}"
+                      aria-hidden="true"
+                    >
+                      <path
+                        d="M15.975 19.633c.402 0 .804-.201 1.106-.503L30.548 5.462a1.577 1.577 0 0 0 0-2.211L28.236.94a1.577 1.577 0 0 0-2.21 0L16.007 10.957 5.975.93a1.577 1.577 0 0 0-2.211 0L1.452 3.24a1.577 1.577 0 0 0 0 2.211L14.92 19.12c.302.302.704.503 1.106.503"
+                      ></path>
+                    </svg>
+                  </button>
+                </div>
               </td>
             </tr>
           `
@@ -1291,6 +1312,22 @@
         window.requestAnimationFrame(scheduleOverviewSync);
       };
 
+      const openSequenceSegment = (segmentId) => {
+        if (!segmentId) {
+          return;
+        }
+
+        if (state.view !== sequenceView) {
+          setView(sequenceView);
+          window.requestAnimationFrame(() => {
+            scrollToSequenceSegment(segmentId);
+          });
+          return;
+        }
+
+        scrollToSequenceSegment(segmentId);
+      };
+
       const renderSequenceMap = (
         svg,
         {
@@ -1422,6 +1459,14 @@
         renderSequenceSegments();
         scheduleOverviewSync();
       });
+
+      tableBody
+        .querySelectorAll('[data-sequence-table-trigger]')
+        .forEach((button) => {
+          button.addEventListener('click', () => {
+            openSequenceSegment(button.dataset.sequenceTableTrigger);
+          });
+        });
 
       sequenceViewport.addEventListener('scroll', syncSequenceOverviewToScroll, {
         passive: true
