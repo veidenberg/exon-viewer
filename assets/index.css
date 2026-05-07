@@ -3672,13 +3672,6 @@
         padding-top: 10px;
         width: var(--content-width);
       }
-      .keyline__ProteinsListItemInfo__WiQdy {
-        border-bottom: 1px solid var(--color-orange);
-        margin-bottom: 20px;
-        margin-top: 40px;
-        padding: 0;
-        width: var(--content-width);
-      }
       .proteinSummaryTop__ProteinsListItemInfo__WiQdy {
         align-items: start;
         display: grid;

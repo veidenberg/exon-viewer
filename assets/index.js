@@ -180,12 +180,18 @@
   };
   const defaultView = 'overview';
   const externalReferencesView = 'external-references';
+  const sequenceLegendView = 'sequence-legend';
   const state = {
     view: defaultView
   };
 
-  const normalizeView = (view) =>
-    view === externalReferencesView ? externalReferencesView : defaultView;
+  const normalizeView = (view) => {
+    if (view === externalReferencesView || view === sequenceLegendView) {
+      return view;
+    }
+
+    return defaultView;
+  };
 
   const render = () => {
     document.documentElement.dataset.snapshotSidebarView = state.view;
@@ -279,12 +285,22 @@
   const defaultView = 'transcript';
   const proteinView = 'protein';
   const exonsView = 'exons';
+  const sequenceView = 'sequence';
   const state = {
     view: defaultView
   };
 
-  const normalizeView = (view) =>
-    view === proteinView || view === exonsView ? view : defaultView;
+  const normalizeView = (view) => {
+    if (
+      view === proteinView ||
+      view === exonsView ||
+      view === sequenceView
+    ) {
+      return view;
+    }
+
+    return defaultView;
+  };
 
   const getViewFromUrl = () => {
     const url = new URL(window.location.href);
@@ -295,7 +311,11 @@
   const updateUrl = (view, { replace = false } = {}) => {
     const url = new URL(window.location.href);
 
-    if (view === proteinView || view === exonsView) {
+    if (
+      view === proteinView ||
+      view === exonsView ||
+      view === sequenceView
+    ) {
       url.searchParams.set('view', view);
     } else {
       url.searchParams.delete('view');
@@ -323,6 +343,14 @@
 
       panel.hidden = !isSelected;
     });
+
+    document
+      .querySelectorAll('[data-sequence-map-overlay="primary"]')
+      .forEach((overlay) => {
+        overlay.style.opacity = state.view === sequenceView ? '1' : '0';
+        overlay.style.pointerEvents =
+          state.view === sequenceView ? 'auto' : 'none';
+      });
   };
 
 
@@ -554,7 +582,11 @@
           order: row.order,
           exonId: row.exonId,
           location: row.location,
+          start,
+          end,
           phase: row.phase,
+          utrs: row.utrs,
+          variants: row.variants,
           exonLength: sequence.length || end - start + 1,
           sequence
         };
@@ -582,6 +614,867 @@
           `
         )
         .join('');
+
+      const legendList = document.querySelector(
+        '[data-snapshot-section="sequence-legend-list"]'
+      );
+      const sequenceList = document.querySelector(
+        '[data-snapshot-section="transcript-sequence-list"]'
+      );
+      const sequenceViewport = document.querySelector(
+        '[data-snapshot-section="transcript-sequence-viewport"]'
+      );
+      const sequenceMapSvg = document.querySelector(
+        '[data-snapshot-section="transcript-sequence-map-svg"]'
+      );
+      const primarySequenceMapSvg = document.querySelector(
+        '[data-snapshot-section="transcript-content"] .svg__GeneOverviewImage__v0BUT'
+      );
+      const sequenceActiveLocation = document.querySelector(
+        '[data-snapshot-section="transcript-sequence-active-location"]'
+      );
+      const intronToggle = document.querySelector(
+        '[data-snapshot-action="toggle-sequence-introns"]'
+      );
+      const sequenceViewButton = tabContainer.querySelector(
+        '[data-transcript-view-trigger="sequence"]'
+      );
+
+      const escapeHtml = (value) =>
+        String(value)
+          .replaceAll('&', '&amp;')
+          .replaceAll('<', '&lt;')
+          .replaceAll('>', '&gt;')
+          .replaceAll('"', '&quot;')
+          .replaceAll("'", '&#39;');
+
+      const clamp = (value, min, max) =>
+        Math.min(max, Math.max(min, value));
+
+      const createCoordinateScale = (rangeStart, rangeEnd) => {
+        const totalSpan = Math.max(
+          sequenceState.totalRangeEnd - sequenceState.totalRangeStart,
+          1
+        );
+        const span = rangeEnd - rangeStart;
+
+        return (coordinate) =>
+          rangeStart +
+          ((coordinate - sequenceState.totalRangeStart) / totalSpan) * span;
+      };
+
+      const formatBp = (value) =>
+        `${Math.round(value).toLocaleString('en-US')} bp`;
+
+      const createSvgElement = (tagName) =>
+        document.createElementNS('http://www.w3.org/2000/svg', tagName);
+
+      const legendItems = [
+        {
+          key: 'upstream-flank',
+          label: 'Upstream flank',
+          description: 'Sequence shown immediately before the transcript start.'
+        },
+        {
+          key: 'downstream-flank',
+          label: 'Downstream flank',
+          description: 'Sequence shown immediately after the transcript end.'
+        },
+        {
+          key: 'coding-exon',
+          label: 'Coding exon',
+          description: 'Spliced exon sequence contributing to the coding transcript.'
+        },
+        {
+          key: 'intron',
+          label: 'Intron',
+          description: 'Intronic sequence rendered in lowercase; collapsed when hidden.'
+        },
+        {
+          key: 'five-prime-utr',
+          label: "5' UTR",
+          description: 'Untranslated sequence upstream of the CDS.'
+        },
+        {
+          key: 'three-prime-utr',
+          label: "3' UTR",
+          description: 'Untranslated sequence downstream of the CDS.'
+        },
+        {
+          key: 'variant',
+          label: 'Variant',
+          description: 'Representative sequence window carrying a reported transcript variant.'
+        },
+        {
+          key: 'missense',
+          label: 'Missense',
+          description: 'Protein-altering substitution within the coding sequence.'
+        },
+        {
+          key: 'frameshift',
+          label: 'Frameshift',
+          description: 'Indel affecting the downstream codon frame.'
+        },
+        {
+          key: 'synonymous',
+          label: 'Synonymous',
+          description: 'Coding change without amino-acid substitution.'
+        },
+        {
+          key: 'splice-donor',
+          label: 'Splice donor',
+          description: 'Representative donor site signal at the intron start.'
+        },
+        {
+          key: 'splice-acceptor',
+          label: 'Splice acceptor',
+          description: 'Representative acceptor site signal at the intron end.'
+        },
+        {
+          key: 'splice-region',
+          label: 'Splice region',
+          description: 'Near-junction sequence that may affect splicing efficiency.'
+        },
+        {
+          key: 'start-lost',
+          label: 'Start lost',
+          description: 'Representative change affecting the CDS start context.'
+        },
+        {
+          key: 'stop-gained',
+          label: 'Stop gained',
+          description: 'Representative truncating substitution in the coding sequence.'
+        },
+        {
+          key: 'stop-lost',
+          label: 'Stop lost',
+          description: 'Representative change extending translation past the annotated stop.'
+        },
+        {
+          key: 'inframe-deletion',
+          label: 'Inframe deletion',
+          description: 'Representative codon-preserving deletion segment.'
+        }
+      ];
+
+      if (legendList) {
+        legendList.innerHTML = legendItems
+          .map(
+            (item) => `
+              <div data-snapshot-section="sequence-legend-item">
+                <span
+                  data-snapshot-section="sequence-legend-swatch"
+                  data-sequence-annotation="${item.key}"
+                  aria-hidden="true"
+                ></span>
+                <div data-snapshot-section="sequence-legend-copy">
+                  <div data-snapshot-section="sequence-legend-label">${item.label}</div>
+                  <div data-snapshot-section="sequence-legend-description">${item.description}</div>
+                </div>
+              </div>
+            `
+          )
+          .join('');
+      }
+
+      if (
+        !sequenceList ||
+        !sequenceViewport ||
+        !sequenceMapSvg ||
+        !sequenceActiveLocation ||
+        !intronToggle
+      ) {
+        return;
+      }
+
+      const upstreamFlankSequence =
+        'ttgctcttgagttttccctgagtagtagtctccagttcatttgccagtgagaagatag';
+      const downstreamFlankSequence =
+        'ttttgttttttatttatgttgttttcctgagacagagtctcactctgtcacccaggct';
+      const exonFeatureAnnotations = {
+        ENSE00001484009: [{ start: 45, end: 63, type: 'start-lost' }],
+        ENSE00003666217: [
+          { start: 78, end: 104, type: 'missense' },
+          { start: 170, end: 193, type: 'synonymous' }
+        ],
+        ENSE00000939167: [
+          { start: 152, end: 182, type: 'variant' },
+          { start: 640, end: 671, type: 'inframe-deletion' }
+        ],
+        ENSE00000939168: [
+          { start: 210, end: 246, type: 'missense' },
+          { start: 1184, end: 1215, type: 'frameshift' },
+          { start: 2526, end: 2556, type: 'stop-gained' }
+        ],
+        ENSE00000939173: [{ start: 300, end: 326, type: 'variant' }],
+        ENSE00000939174: [{ start: 70, end: 94, type: 'missense' }],
+        ENSE00000939177: [{ start: 180, end: 214, type: 'stop-lost' }],
+        ENSE00000939189: [
+          { start: 40, end: 66, type: 'variant' },
+          { start: 167, end: 192, type: 'inframe-deletion' }
+        ],
+        ENSE00003717596: [
+          { start: 120, end: 152, type: 'missense' },
+          { start: 720, end: 762, type: 'frameshift' }
+        ]
+      };
+      const sequenceState = {
+        showIntrons: Boolean(intronToggle.checked),
+        segments: [],
+        segmentElements: [],
+        segmentsById: new Map(),
+        mapInstances: [],
+        activeSegmentId: null,
+        syncFrame: 0,
+        targetTimeout: 0,
+        targetSegmentId: null,
+        totalRangeStart: 0,
+        totalRangeEnd: 0
+      };
+
+      const firstExon = exonRowsWithSequence[0];
+      const lastExon = exonRowsWithSequence[exonRowsWithSequence.length - 1];
+
+      const parseUtrLength = (utrs) => {
+        const match = typeof utrs === 'string' ? utrs.match(/(\d+) bp/) : null;
+
+        return match ? Number(match[1]) : 0;
+      };
+
+      const normalizeAnnotations = (sequenceLength, annotations) => {
+        const normalized = [];
+
+        annotations
+          .slice()
+          .sort((first, second) => first.start - second.start)
+          .forEach((annotation) => {
+            const start = clamp(annotation.start, 1, sequenceLength);
+            const end = clamp(annotation.end, start, sequenceLength);
+            const previous = normalized[normalized.length - 1];
+
+            if (previous && start <= previous.end) {
+              return;
+            }
+
+            normalized.push({
+              start,
+              end,
+              type: annotation.type
+            });
+          });
+
+        return normalized;
+      };
+
+      const buildSequenceParts = (sequence, baseType, annotations) => {
+        const parts = [];
+        let cursor = 1;
+
+        annotations.forEach((annotation) => {
+          if (annotation.start > cursor) {
+            parts.push({
+              type: baseType,
+              text: sequence.slice(cursor - 1, annotation.start - 1)
+            });
+          }
+
+          parts.push({
+            type: annotation.type,
+            text: sequence.slice(annotation.start - 1, annotation.end)
+          });
+          cursor = annotation.end + 1;
+        });
+
+        if (cursor <= sequence.length) {
+          parts.push({
+            type: baseType,
+            text: sequence.slice(cursor - 1)
+          });
+        }
+
+        return parts.filter((part) => part.text);
+      };
+
+      const renderSequenceParts = (parts) =>
+        parts
+          .map(
+            (part) =>
+              `<span data-sequence-annotation="${part.type}">${escapeHtml(
+                part.text
+              )}</span>`
+          )
+          .join('');
+
+      const buildIntronSequence = (length, index) => {
+        const donorMotifs = ['gtaagt', 'gtgagt', 'gtatgt'];
+        const acceptorMotifs = ['tttcag', 'ctgcag', 'ttacag'];
+        const fillerMotifs = [
+          'ctttgacatgct',
+          'ttgagaaacctg',
+          'gttttctctgcc',
+          'catttgttcaaa'
+        ];
+
+        const donor = donorMotifs[index % donorMotifs.length];
+        const acceptor = acceptorMotifs[index % acceptorMotifs.length];
+        const filler = fillerMotifs[index % fillerMotifs.length];
+        const repeatCount = Math.max(1, Math.min(4, Math.round(length / 800)));
+        const repeated = filler.repeat(repeatCount + 1);
+
+        return `${donor}${repeated.slice(0, 12)}...${repeated.slice(-10)}${acceptor}`;
+      };
+
+      const buildIntronAnnotations = (sequenceLength) => {
+        if (!sequenceLength) {
+          return [];
+        }
+
+        const annotations = [
+          { start: 1, end: Math.min(2, sequenceLength), type: 'splice-donor' }
+        ];
+
+        if (sequenceLength > 2) {
+          annotations.push({
+            start: 3,
+            end: Math.min(8, sequenceLength),
+            type: 'splice-region'
+          });
+        }
+
+        const acceptorStart = Math.max(sequenceLength - 5, 1);
+
+        if (acceptorStart > 8) {
+          const spliceRegionEnd = Math.max(acceptorStart - 1, 1);
+          const spliceRegionStart = Math.max(acceptorStart - 6, 9);
+
+          if (spliceRegionStart <= spliceRegionEnd) {
+            annotations.push({
+              start: spliceRegionStart,
+              end: spliceRegionEnd,
+              type: 'splice-region'
+            });
+          }
+        }
+
+        annotations.push({
+          start: acceptorStart,
+          end: sequenceLength,
+          type: 'splice-acceptor'
+        });
+
+        return normalizeAnnotations(sequenceLength, annotations);
+      };
+
+      const buildExonAnnotations = (row) => {
+        const annotations = [];
+        const utrLength = parseUtrLength(row.utrs);
+
+        if (row.utrs.startsWith("5' UTR")) {
+          annotations.push({
+            start: 1,
+            end: Math.min(utrLength || row.sequence.length, row.sequence.length),
+            type: 'five-prime-utr'
+          });
+        }
+
+        if (row.utrs.startsWith("3' UTR")) {
+          annotations.push({
+            start: Math.max(row.sequence.length - utrLength + 1, 1),
+            end: row.sequence.length,
+            type: 'three-prime-utr'
+          });
+        }
+
+        (exonFeatureAnnotations[row.exonId] || []).forEach((annotation) => {
+          annotations.push(annotation);
+        });
+
+        return normalizeAnnotations(row.sequence.length, annotations);
+      };
+
+      const buildSequenceSegments = () => {
+        const segments = [
+          {
+            id: 'segment-upstream-flank',
+            kind: 'flank',
+            label: 'Upstream flank',
+            subtitle: `${upstreamFlankSequence.length} bp shown before exon 1`,
+            location: `${Math.max(firstExon.start - upstreamFlankSequence.length, 1)}-${firstExon.start - 1}`,
+            mapStart: Math.max(firstExon.start - upstreamFlankSequence.length, 1),
+            mapEnd: firstExon.start - 1,
+            parts: buildSequenceParts(
+              upstreamFlankSequence,
+              'upstream-flank',
+              []
+            )
+          }
+        ];
+
+        exonRowsWithSequence.forEach((row, index) => {
+          segments.push({
+            id: `segment-exon-${row.order}`,
+            kind: 'exon',
+            exonId: row.exonId,
+            order: row.order,
+            label: `Exon ${row.order}`,
+            subtitle: `${row.exonId} · ${row.location} · ${formatBp(
+              row.exonLength
+            )}`,
+            detail: row.utrs !== 'None' ? row.utrs : 'Coding exon',
+            location: row.location,
+            mapStart: row.start,
+            mapEnd: row.end,
+            parts: buildSequenceParts(
+              row.sequence,
+              'coding-exon',
+              buildExonAnnotations(row)
+            )
+          });
+
+          const nextRow = exonRowsWithSequence[index + 1];
+
+          if (!nextRow) {
+            return;
+          }
+
+          const intronLength = Math.max(nextRow.start - row.end - 1, 0);
+
+          segments.push({
+            id: `segment-intron-${row.order}-${nextRow.order}`,
+            kind: 'intron',
+            label: `Intron ${row.order}-${nextRow.order}`,
+            subtitle: `${formatBp(intronLength)} between exon ${row.order} and exon ${nextRow.order}`,
+            detail: 'Representative splice donor / acceptor context shown',
+            location: `${row.end + 1}-${nextRow.start - 1}`,
+            mapStart: row.end + 1,
+            mapEnd: nextRow.start - 1,
+            parts: buildSequenceParts(
+              buildIntronSequence(intronLength, index),
+              'intron',
+              buildIntronAnnotations(buildIntronSequence(intronLength, index).length)
+            )
+          });
+        });
+
+        segments.push({
+          id: 'segment-downstream-flank',
+          kind: 'flank',
+          label: 'Downstream flank',
+          subtitle: `${downstreamFlankSequence.length} bp shown after exon 27`,
+          location: `${lastExon.end + 1}-${lastExon.end + downstreamFlankSequence.length}`,
+          mapStart: lastExon.end + 1,
+          mapEnd: lastExon.end + downstreamFlankSequence.length,
+          parts: buildSequenceParts(
+            downstreamFlankSequence,
+            'downstream-flank',
+            []
+          )
+        });
+
+        return segments;
+      };
+
+      const allSequenceSegments = buildSequenceSegments();
+      const exonSegments = allSequenceSegments.filter(
+        (segment) => segment.kind === 'exon'
+      );
+
+      sequenceState.totalRangeStart = allSequenceSegments[0].mapStart;
+      sequenceState.totalRangeEnd =
+        allSequenceSegments[allSequenceSegments.length - 1].mapEnd;
+
+      const defaultMapScale = createCoordinateScale(10, 685);
+      const primaryMapRange = (() => {
+        if (!primarySequenceMapSvg) {
+          return null;
+        }
+
+        const baseRects = Array.from(
+          primarySequenceMapSvg.querySelectorAll(
+            '.transcript__GeneOverviewImage__v0BUT rect[y="0"]'
+          )
+        );
+
+        if (!baseRects.length) {
+          return null;
+        }
+
+        const minX = Math.min(
+          ...baseRects.map((rect) => Number(rect.getAttribute('x') || 0))
+        );
+        const maxX = Math.max(
+          ...baseRects.map(
+            (rect) =>
+              Number(rect.getAttribute('x') || 0) +
+              Number(rect.getAttribute('width') || 0)
+          )
+        );
+
+        return {
+          start: minX,
+          end: maxX
+        };
+      })();
+
+      const renderSequenceSegments = () => {
+        const segments = sequenceState.showIntrons
+          ? allSequenceSegments
+          : allSequenceSegments.filter((segment) => segment.kind !== 'intron');
+
+        sequenceState.segments = segments;
+        sequenceState.segmentsById = new Map(
+          segments.map((segment) => [segment.id, segment])
+        );
+
+        sequenceList.innerHTML = segments
+          .map(
+            (segment) => `
+              <div
+                id="${segment.id}"
+                data-sequence-segment="${segment.id}"
+                data-sequence-segment-kind="${segment.kind}"
+              >
+                <span data-sequence-segment-label>${segment.label}</span>
+                <span data-sequence-segment-location>${segment.location}</span>
+                <span data-sequence-segment-sequence>${renderSequenceParts(
+                  segment.parts
+                )}</span>
+              </div>
+            `
+          )
+          .join('');
+
+        sequenceState.segmentElements = Array.from(
+          sequenceList.querySelectorAll('[data-sequence-segment]')
+        );
+      };
+
+      const updateSegmentStates = () => {
+        sequenceState.segmentElements.forEach((element) => {
+          const segmentId = element.dataset.sequenceSegment;
+          const isActive = segmentId === sequenceState.activeSegmentId;
+          const isTargeted = segmentId === sequenceState.targetSegmentId;
+
+          element.toggleAttribute('data-sequence-active', isActive);
+          element.toggleAttribute('data-sequence-targeted', isTargeted);
+        });
+
+        sequenceState.mapInstances.forEach((instance) => {
+          instance.rectsBySegmentId.forEach((rect, segmentId) => {
+            rect.dataset.sequenceMapState =
+              segmentId === sequenceState.activeSegmentId ? 'active' : 'idle';
+          });
+        });
+      };
+
+      const updateOverviewLocation = (segment, coordinate) => {
+        if (!segment) {
+          return;
+        }
+
+        sequenceState.activeSegmentId = segment.id;
+        updateSegmentStates();
+
+        const coordinateLabel = Math.round(coordinate).toLocaleString('en-US');
+
+        sequenceActiveLocation.textContent = `${segment.label} · ${coordinateLabel} bp`;
+
+        const totalSpan = Math.max(
+          sequenceState.totalRangeEnd - sequenceState.totalRangeStart,
+          1
+        );
+        const windowWidth = Math.max(
+          totalSpan * (sequenceViewport.clientHeight / Math.max(sequenceViewport.scrollHeight, 1)),
+          600
+        );
+        const windowStart = clamp(
+          coordinate - windowWidth / 2,
+          sequenceState.totalRangeStart,
+          sequenceState.totalRangeEnd - windowWidth
+        );
+        const windowEnd = Math.min(
+          windowStart + windowWidth,
+          sequenceState.totalRangeEnd
+        );
+
+        sequenceState.mapInstances.forEach((instance) => {
+          const markerX = instance.scale(coordinate);
+          instance.marker.setAttribute('x1', String(markerX));
+          instance.marker.setAttribute('x2', String(markerX));
+          instance.window.setAttribute('x', String(instance.scale(windowStart)));
+          instance.window.setAttribute(
+            'width',
+            String(
+              Math.max(instance.scale(windowEnd) - instance.scale(windowStart), 10)
+            )
+          );
+        });
+      };
+
+      const syncSequenceOverviewToScroll = () => {
+        const viewportTop = sequenceViewport.scrollTop;
+        const viewportMid = viewportTop + sequenceViewport.clientHeight / 2;
+
+        if (!sequenceState.segmentElements.length) {
+          return;
+        }
+
+        const activeElement = sequenceState.segmentElements.reduce(
+          (closest, element) => {
+            const elementMid = element.offsetTop + element.offsetHeight / 2;
+            const distance = Math.abs(elementMid - viewportMid);
+
+            if (!closest || distance < closest.distance) {
+              return {
+                distance,
+                element
+              };
+            }
+
+            return closest;
+          },
+          null
+        )?.element;
+
+        if (!activeElement) {
+          return;
+        }
+
+        const activeSegment = sequenceState.segmentsById.get(
+          activeElement.dataset.sequenceSegment
+        );
+
+        if (!activeSegment) {
+          return;
+        }
+
+        const localProgress = clamp(
+          (viewportMid - activeElement.offsetTop) /
+            Math.max(activeElement.offsetHeight, 1),
+          0,
+          1
+        );
+        const coordinate =
+          activeSegment.mapStart +
+          (activeSegment.mapEnd - activeSegment.mapStart) * localProgress;
+
+        updateOverviewLocation(activeSegment, coordinate);
+      };
+
+      const scheduleOverviewSync = () => {
+        if (sequenceState.syncFrame) {
+          return;
+        }
+
+        sequenceState.syncFrame = window.requestAnimationFrame(() => {
+          sequenceState.syncFrame = 0;
+          syncSequenceOverviewToScroll();
+        });
+      };
+
+      const highlightSequenceTarget = (segmentId) => {
+        window.clearTimeout(sequenceState.targetTimeout);
+        sequenceState.targetSegmentId = segmentId;
+        updateSegmentStates();
+        sequenceState.targetTimeout = window.setTimeout(() => {
+          sequenceState.targetSegmentId = null;
+          updateSegmentStates();
+        }, 1400);
+      };
+
+      const scrollToSequenceSegment = (segmentId) => {
+        const targetElement = sequenceList.querySelector(`#${segmentId}`);
+
+        if (!targetElement) {
+          return;
+        }
+
+        highlightSequenceTarget(segmentId);
+        sequenceViewport.scrollTo({
+          top: Math.max(targetElement.offsetTop - 12, 0),
+          behavior: 'smooth'
+        });
+
+        window.requestAnimationFrame(scheduleOverviewSync);
+      };
+
+      const renderSequenceMap = (
+        svg,
+        {
+          clear = true,
+          showTrack = true,
+          showEndLabels = true,
+          overlayId = null,
+          rectY = 4,
+          rectHeight = 10,
+          windowY = 3,
+          windowHeight = 12,
+          markerStartY = 2,
+          markerEndY = 16,
+          scale = defaultMapScale,
+          rectRadius = 0,
+          windowRadius = 0
+        } = {}
+      ) => {
+        const rectsBySegmentId = new Map();
+        let target = svg;
+
+        if (clear) {
+          svg.innerHTML = '';
+        }
+
+        if (overlayId) {
+          const existingOverlay = svg.querySelector(
+            `[data-sequence-map-overlay="${overlayId}"]`
+          );
+
+          if (existingOverlay) {
+            existingOverlay.remove();
+          }
+
+          target = createSvgElement('g');
+          target.setAttribute('data-sequence-map-overlay', overlayId);
+          svg.appendChild(target);
+        }
+
+        if (showTrack) {
+          const track = createSvgElement('rect');
+          track.setAttribute('x', '10');
+          track.setAttribute('y', '8');
+          track.setAttribute('width', '675');
+          track.setAttribute('height', '2');
+          track.setAttribute('rx', '1');
+          track.setAttribute('data-sequence-map-backbone', 'true');
+          target.appendChild(track);
+        }
+
+        const windowRect = createSvgElement('rect');
+        windowRect.setAttribute('y', String(windowY));
+        windowRect.setAttribute('height', String(windowHeight));
+        windowRect.setAttribute('rx', String(windowRadius));
+        windowRect.setAttribute('data-sequence-map-window', 'true');
+        target.appendChild(windowRect);
+
+        exonSegments.forEach((segment) => {
+          const rect = createSvgElement('rect');
+          const x = scale(segment.mapStart);
+          const width = Math.max(
+            scale(segment.mapEnd) - scale(segment.mapStart),
+            6
+          );
+
+          rect.setAttribute('x', String(x));
+          rect.setAttribute('y', String(rectY));
+          rect.setAttribute('width', String(width));
+          rect.setAttribute('height', String(rectHeight));
+          rect.setAttribute('rx', String(rectRadius));
+          rect.setAttribute('tabindex', '0');
+          rect.setAttribute('role', 'button');
+          rect.setAttribute(
+            'aria-label',
+            `Scroll to ${segment.label.toLowerCase()} in the sequence view`
+          );
+          rect.dataset.sequenceMapExon = String(segment.order);
+          rect.dataset.sequenceMapState = 'idle';
+          rect.setAttribute('data-sequence-map-exon', 'true');
+
+          rect.addEventListener('click', () => {
+            scrollToSequenceSegment(segment.id);
+          });
+          rect.addEventListener('keydown', (event) => {
+            if (event.key !== 'Enter' && event.key !== ' ') {
+              return;
+            }
+
+            event.preventDefault();
+            scrollToSequenceSegment(segment.id);
+          });
+
+          rectsBySegmentId.set(segment.id, rect);
+          target.appendChild(rect);
+        });
+
+        const marker = createSvgElement('line');
+        marker.setAttribute('y1', String(markerStartY));
+        marker.setAttribute('y2', String(markerEndY));
+        marker.setAttribute('data-sequence-map-marker', 'true');
+        target.appendChild(marker);
+
+        if (showEndLabels) {
+          const leftLabel = createSvgElement('text');
+          leftLabel.setAttribute('x', '0');
+          leftLabel.setAttribute('y', '17');
+          leftLabel.textContent = "5'";
+          leftLabel.setAttribute('data-sequence-map-end-label', 'start');
+          target.appendChild(leftLabel);
+
+          const rightLabel = createSvgElement('text');
+          rightLabel.setAttribute('x', '688');
+          rightLabel.setAttribute('y', '17');
+          rightLabel.textContent = "3'";
+          rightLabel.setAttribute('data-sequence-map-end-label', 'end');
+          target.appendChild(rightLabel);
+        }
+
+        return {
+          rectsBySegmentId,
+          window: windowRect,
+          marker,
+          scale
+        };
+      };
+
+      intronToggle.addEventListener('change', () => {
+        sequenceState.showIntrons = intronToggle.checked;
+        renderSequenceSegments();
+        scheduleOverviewSync();
+      });
+
+      sequenceViewport.addEventListener('scroll', scheduleOverviewSync, {
+        passive: true
+      });
+      window.addEventListener('resize', scheduleOverviewSync, { passive: true });
+
+      if (sequenceViewButton) {
+        sequenceViewButton.addEventListener('click', () => {
+          window.requestAnimationFrame(scheduleOverviewSync);
+        });
+      }
+
+      renderSequenceSegments();
+      sequenceState.mapInstances = [
+        renderSequenceMap(sequenceMapSvg, {
+          scale: defaultMapScale
+        })
+      ];
+
+      if (primarySequenceMapSvg) {
+        const primaryMapHost =
+          primarySequenceMapSvg.querySelector('g[transform]') || primarySequenceMapSvg;
+
+        sequenceState.mapInstances.push(
+          renderSequenceMap(primaryMapHost, {
+            clear: false,
+            showTrack: false,
+            showEndLabels: false,
+            overlayId: 'primary',
+            rectY: 0,
+            rectHeight: 7,
+            windowY: -1,
+            windowHeight: 9,
+            markerStartY: -1,
+            markerEndY: 8,
+            scale: createCoordinateScale(
+              primaryMapRange?.start ?? 1,
+              primaryMapRange?.end ?? 692
+            ),
+            rectRadius: 0,
+            windowRadius: 0
+          })
+        );
+      }
+
+      scheduleOverviewSync();
     })();
   const setView = (view, options = {}) => {
     const { replace = false, updateBrowserUrl = true } = options;

@@ -684,6 +684,17 @@
               >
                 External references
               </button>
+              <button
+                class="tab__Tabs__EblES defaultTab__TranscriptViewSidebarTabs__pqZc2"
+                data-sidebar-view-trigger="sequence-legend"
+                type="button"
+                role="tab"
+                aria-selected="false"
+                aria-controls="snapshot-sidebar-panel-sequence-legend"
+                id="snapshot-sidebar-tab-sequence-legend"
+              >
+                Legend
+              </button>
             </div>
           </div>
           <div class="mainWrapper__StandardAppLayout__rVqCZ">
@@ -945,6 +956,17 @@
                         id="snapshot-transcript-view-tab-exons"
                       >
                         Exons
+                      </button>
+                      <button
+                        type="button"
+                        class="tab__Tabs__EblES tab__TranscriptViewTabs__A0dJm"
+                        data-transcript-view-trigger="sequence"
+                        role="tab"
+                        aria-selected="false"
+                        aria-controls="snapshot-transcript-view-panel-sequence"
+                        id="snapshot-transcript-view-tab-sequence"
+                      >
+                        Sequence
                       </button>
                     </div>
                   </div>
@@ -1784,7 +1806,6 @@
                                 </div>
                               </div>
                             </div>
-                            <div class="keyline__ProteinsListItemInfo__WiQdy"></div>
                           </div>
                         </div>
                       </div>
@@ -1817,6 +1838,53 @@
                         </thead>
                         <tbody data-snapshot-section="transcript-exons-table-body"></tbody>
                       </table>
+                    </div>
+                  </div>
+                </div>
+                <div
+                  class="panel__Panel__2gAo1 panel__TranscriptFunction__4RDk-"
+                  id="snapshot-transcript-view-panel-sequence"
+                  data-transcript-view-panel="sequence"
+                  role="tabpanel"
+                  aria-labelledby="snapshot-transcript-view-tab-sequence"
+                  hidden
+                >
+                  <div
+                    class="body__Panel__2gAo1 panelBody__TranscriptFunction__4RDk-"
+                    data-snapshot-section="transcript-sequence-panel"
+                  >
+                    <div data-snapshot-section="transcript-sequence-overview">
+                      <div data-snapshot-section="transcript-sequence-overview-header">
+                        <div data-snapshot-section="transcript-sequence-overview-title">
+                          Sequence overview
+                        </div>
+                        <div
+                          data-snapshot-section="transcript-sequence-active-location"
+                          aria-live="polite"
+                        ></div>
+                      </div>
+                      <div data-snapshot-section="transcript-sequence-map-shell">
+                        <div data-snapshot-section="transcript-sequence-map-track"></div>
+                        <svg
+                          data-snapshot-section="transcript-sequence-map-svg"
+                          viewBox="0 0 695 18"
+                          width="695"
+                          aria-label="Transcript sequence overview"
+                        ></svg>
+                      </div>
+                    </div>
+                    <div data-snapshot-section="transcript-sequence-controls">
+                      <label data-snapshot-section="transcript-sequence-control">
+                        <input
+                          type="checkbox"
+                          data-snapshot-action="toggle-sequence-introns"
+                          checked
+                        />
+                        <span>Show introns</span>
+                      </label>
+                    </div>
+                    <div data-snapshot-section="transcript-sequence-viewport">
+                      <div data-snapshot-section="transcript-sequence-list"></div>
                     </div>
                   </div>
                 </div>
@@ -2370,6 +2438,20 @@
                           >
                         </div>
                       </div>
+                    </div>
+                  </div>
+                  <div
+                    id="snapshot-sidebar-panel-sequence-legend"
+                    data-sidebar-view-panel="sequence-legend"
+                    role="tabpanel"
+                    aria-labelledby="snapshot-sidebar-tab-sequence-legend"
+                    hidden
+                  >
+                    <div data-snapshot-section="sequence-legend-panel">
+                      <div data-snapshot-section="sequence-legend-title">
+                        Sequence annotation legend
+                      </div>
+                      <div data-snapshot-section="sequence-legend-list"></div>
                     </div>
                   </div>
                 </div>
